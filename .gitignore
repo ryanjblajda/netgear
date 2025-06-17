@@ -1,0 +1,11 @@
+*.info
+*.ser
+*.config
+*.dll
+*.pdb
+*.dat
+*.der
+*.txt
+*.exe
+*.manifest
+*.cache

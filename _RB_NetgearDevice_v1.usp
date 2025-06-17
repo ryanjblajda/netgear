@@ -1,0 +1,267 @@
+/*
+Programmer: Ryan Blajda
+Comments:
+*/
+
+/*** Compiler Directives ****/
+#SYMBOL_NAME "Netgear Switch"
+#HINT ""
+#CATEGORY "46" "RBLAJDA-C#" // Custom
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#USER_SIMPLSHARP_LIBRARY "Netgear"
+
+#HELP_BEGIN
+
+Enable_Debug - will enable debug printing on this module and any interface children subscribed to it
+
+Login - pulse to login to the device
+	requires username, password, and host to be set first
+
+Logout - pulse to logout of device
+
+Username - a valid username with api access [needs admin rights most likely]
+Password - the password for the account
+Host - the ip address or hostname [requires hostname resolution work properly]
+
+Poll_Interval - the time in seconds we should poll the device for updates
+Device_ID - a unique ID if subscription to multiple switches is desired. This allows interfaces to determine which switch to subscribe to. 
+	This will need to match the Parent_Device_ID parameter of any Netgear Switch Interface Symbols/Modules you want to subscribe to this symbol/module.
+
+#HELP_END
+
+/*** INPUTS ***/
+DIGITAL_INPUT _SKIP_, _SKIP_, Enable_Debug, Enable_Poll, _SKIP_, Login, Logout, _SKIP_;
+STRING_INPUT Username[100], Password[100], Host[100];
+
+/*** PARAMS ***/
+INTEGER_PARAMETER Poll_Interval, Device_ID;
+
+#BEGIN_PARAMETER_PROPERTIES Poll_Interval
+	propValidUnits= unitTime;
+	propDefaultUnit= unitTime;
+    propBounds = 1s, 10s;
+	propDefaultValue = 5s;
+    propShortDescription= "";
+#END_PARAMETER_PROPERTIES
+
+#BEGIN_PARAMETER_PROPERTIES Device_ID
+	propValidUnits=unitDecimal;
+   	propDefaultUnit= unitDecimal;
+   	propBounds = 1d, 255d;
+	propDefaultValue = 1d;
+   	propShortDescription= "";
+#END_PARAMETER_PROPERTIES
+
+
+/*** OUTPUTS ***/
+DIGITAL_OUTPUT _SKIP_, _SKIP_, Registered, _SKIP_, POE_Enabled;
+
+DIGITAL_OUTPUT _SKIP_, Login_Fb, _SKIP_, Connected_Fb;
+ANALOG_OUTPUT Connection_Status;
+
+STRING_OUTPUT _SKIP_, Name, Location, Serial_Number, MAC, Model_Number, IP_Address, Software_Version_Number, Last_Reboot_Time, Memory_Usage, CPU_Usage, Fan_State, Temperature, Uptime, Boot_Version, _SKIP_;
+ANALOG_OUTPUT Total_Ports, Active_Ports;
+STRING_OUTPUT Received_Data_Bytes, Transmitted_Data_Bytes;
+
+/*** GLOBAL VARIABLES ***/
+NetgearSwitch thisNetgearDevice;
+
+/*** FUNCTIONS ***/
+FUNCTION MAIN()
+{
+	waitForInitializationComplete();
+	thisNetgearDevice.SymbolName = GetSymbolInstanceName();	
+
+	RegisterEvent(thisNetgearDevice, Registered, OnRegistered);
+	RegisterEvent(thisNetgearDevice, Connected, OnConnected);
+	RegisterEvent(thisNetgearDevice, ConnectionStatus, OnConnectionStatus);
+	RegisterEvent(thisNetgearDevice, LoggedIn, OnLoggedIn);
+	RegisterEvent(thisNetgearDevice, NameChanged, OnDeviceName);
+	RegisterEvent(thisNetgearDevice, LocationChanged, OnDeviceLocation);
+	RegisterEvent(thisNetgearDevice, ActivePortsChanged, OnActivePortsChanged);
+	RegisterEvent(thisNetgearDevice, AdministratorPoEWattageChanged, OnAdministratorPoEWattageChanged);
+	RegisterEvent(thisNetgearDevice, BootVersionChanged, OnBootVersionChanged);
+	RegisterEvent(thisNetgearDevice, CPUUsageChanged, OnCPUUsageChanged);
+	RegisterEvent(thisNetgearDevice, FanStateChanged, OnFanStateChanged);
+	RegisterEvent(thisNetgearDevice, LastRebootChanged, OnLastRebootChanged);
+	RegisterEvent(thisNetgearDevice, MACAddressChanged, OnMACAddressChanged);
+	RegisterEvent(thisNetgearDevice, ModelNumberChanged, OnModelNumberChanged);
+	RegisterEvent(thisNetgearDevice, MemoryInUseChanged, OnMemoryInUseChanged);
+	RegisterEvent(thisNetgearDevice, MemoryUsageChanged, OnMemoryUsageChanged);
+	RegisterEvent(thisNetgearDevice, POEStateChanged, OnPOEStateChanged);
+	RegisterEvent(thisNetgearDevice, PortCountChanged, OnPortCountChanged);
+	RegisterEvent(thisNetgearDevice, RTSPStateChanged, OnRTSPStateChanged);
+	RegisterEvent(thisNetgearDevice, ReceivedBytesChanged, OnReceivedBytesChanged);
+	RegisterEvent(thisNetgearDevice, SoftwareVersionNumberChanged, OnSoftwareVersionNumberChanged);
+	RegisterEvent(thisNetgearDevice, SerialNumberChanged, OnSerialNumberChanged);
+	RegisterEvent(thisNetgearDevice, TemperatureDetailsChanged, OnTemperatureDetailsChanged);
+	RegisterEvent(thisNetgearDevice, TransmittedBytesChanged, OnTransmittedBytesChanged);
+	RegisterEvent(thisNetgearDevice, UptimeChanged, OnUptimeChanged);
+
+	thisNetgearDevice.PollTime = Poll_Interval;
+	thisNetgearDevice.ID = Device_ID;
+}
+
+/*** EVENT HANDLERS ***/
+EVENTHANDLER OnRegistered(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Registered = args.Payload;
+}
+
+EVENTHANDLER OnConnected(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Connected_Fb = args.Payload;
+}
+
+EVENTHANDLER OnConnectionStatus(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Connection_Status = args.Payload;
+}
+
+EVENTHANDLER OnLoggedIn(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Login_Fb = args.Payload;
+}
+
+EVENTHANDLER OnPOEStateChanged(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	POE_Enabled = args.Payload;
+}
+
+EVENTHANDLER OnRTSPStateChanged(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	//RTSP_State = args.Payload;
+}
+
+EVENTHANDLER OnReceivedBytesChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Received_Data_Bytes = args.Payload;
+}
+
+EVENTHANDLER OnTransmittedBytesChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Transmitted_Data_Bytes = args.Payload;
+}
+
+EVENTHANDLER OnPortCountChanged(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Total_Ports = args.Payload;
+}
+
+EVENTHANDLER OnDeviceName(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Name = args.Payload;
+}
+
+EVENTHANDLER OnSoftwareVersionNumberChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Software_Version_Number = args.Payload;
+}
+
+EVENTHANDLER OnSerialNumberChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Serial_Number = args.Payload;
+}
+
+EVENTHANDLER OnTemperatureDetailsChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Temperature = args.Payload;
+}
+
+EVENTHANDLER OnUptimeChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Uptime = args.Payload;
+}
+
+EVENTHANDLER OnBootVersionChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Boot_Version = args.Payload;
+}
+
+EVENTHANDLER OnCPUUsageChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	CPU_Usage = args.Payload;
+}
+
+EVENTHANDLER OnFanStateChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Fan_State = args.Payload;
+}
+
+EVENTHANDLER OnLastRebootChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Last_Reboot_Time = args.Payload;
+}
+
+EVENTHANDLER OnMACAddressChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	MAC = args.Payload;
+}
+
+EVENTHANDLER OnModelNumberChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Model_Number = args.Payload;
+}
+
+EVENTHANDLER OnMemoryInUseChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	//Memory_In_Use = args.Payload;
+}
+
+EVENTHANDLER OnMemoryUsageChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Memory_Usage = args.Payload;
+}
+
+EVENTHANDLER OnDeviceLocation(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	Location = args.Payload;
+}
+
+EVENTHANDLER OnActivePortsChanged(NetgearSwitch sender, DigitalAnalogPayloadEventArgs args)
+{
+	Active_Ports = args.Payload;
+}
+      
+EVENTHANDLER OnAdministratorPoEWattageChanged(NetgearSwitch sender, StringPayloadEventArgs args)
+{
+	//Administrator_POE_Power_Wattage = args.Payload;
+}
+
+
+CHANGE Enable_Debug 
+{
+	thisNetgearDevice.EnableDebug(Enable_Debug);
+}
+
+PUSH Login
+{
+	thisNetgearDevice.Login();
+}
+
+PUSH Logout
+{
+	thisNetgearDevice.Logout();
+}
+
+CHANGE Username
+{
+	thisNetgearDevice.Username = Username;
+}
+
+CHANGE Password
+{
+	thisNetgearDevice.Password = Password;
+}
+
+CHANGE Host
+{
+	thisNetgearDevice.Host = Host;
+}
+
+CHANGE Enable_Poll
+{
+	thisNetgearDevice.EnablePoll(Enable_Poll);
+}

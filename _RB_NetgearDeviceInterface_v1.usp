@@ -1,0 +1,377 @@
+/*
+Programmer: Ryan Blajda
+Comments:
+*/
+
+/*** Compiler Directives ****/
+#SYMBOL_NAME "Netgear Switch Interface"
+#HINT ""
+#CATEGORY "46" "RBLAJDA-C#" // Custom
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#USER_SIMPLSHARP_LIBRARY "Netgear"
+#DEFINE_CONSTANT MAX_ITEMS 16
+
+#HELP_BEGIN
+
+Enable_Debug - enables printing debug messaging, or hiding it from this interface
+
+Interface - the interface you wish to monitor
+Parent_Device_ID - the network switch where this interface will be located, this needs to match the Device_ID parameter set in a Netgear Switch symbol/module
+
+#HELP_END
+
+/*** INPUTS ***/
+DIGITAL_INPUT _SKIP_, _SKIP_, _SKIP_, Enable_Debug, _SKIP_, Enable_Poll, Enable_POE, Disable_POE, Reset_POE;
+
+/*** PARAMS ***/
+INTEGER_PARAMETER Interface, Parent_Device_ID, Poll_Interval;
+
+#BEGIN_PARAMETER_PROPERTIES Interface, Parent_Device_ID
+	propValidUnits=unitDecimal;
+   	propDefaultUnit= unitDecimal;
+   	propBounds = 1d, 255d;
+	propDefaultValue = 1d;
+   	propShortDescription= "";
+#END_PARAMETER_PROPERTIES
+
+#BEGIN_PARAMETER_PROPERTIES Poll_Interval
+	propValidUnits=unitTime;
+   	propDefaultUnit= unitTime;
+   	propBounds = 1s, 30s;
+	propDefaultValue = 1s;
+   	propShortDescription= "how many seconds the port state shall be updated";
+#END_PARAMETER_PROPERTIES
+
+
+
+/*** OUTPUTS ***/
+DIGITAL_OUTPUT _SKIP_, _SKIP_, _SKIP_, Registered, _SKIP_, Administrator_Mode, Flow_Control, LACP, Mirrored, STP, POE_Enabled, POE_Capable, Link_Trap, _SKIP_;
+
+ANALOG_OUTPUT Actual_Port, _SKIP_;
+
+STRING_OUTPUT Description, MAC_Address, _SKIP_;
+
+DIGITAL_OUTPUT Link_Up;
+ANALOG_OUTPUT Port_Status, Port_Mode;
+
+ANALOG_OUTPUT _SKIP_, POE_Status, Interface_Speed, Link_Speed, Duplex, STP_Status, Operational_Status, POE_Class, Authorization_Status, Frame_Size, Max_Frame_Size, Transmit_Rate, Native_Port_VLAN, Default_VLAN_Priority, _SKIP_;
+
+STRING_OUTPUT VLAN_Membership, Transmitted_Data_Bytes, Received_Data_Bytes, Transmit_Speed, Receive_Speed, Dropped_Packets_Count, Errors_Received, Error_Packets_Received, Schedule_Name, _SKIP_;
+
+STRING_OUTPUT Neighbor_Name, Neighbor_Description, Neighbor_Capabilities, Neighbor_Chassis_ID, Neighbor_Port_ID, Neighbor_Port_Description;
+ANALOG_OUTPUT Neighbor_Chassis_ID_Subtype, Neighbor_Port_ID_Subtype, Neighbor_Port_Authorization_Status, _SKIP_;
+
+ANALOG_OUTPUT _SKIP_, _SKIP_, VLAN_For_Connected_Device_[MAX_ITEMS];
+STRING_OUTPUT MAC_Address_For_Connected_Device_[MAX_ITEMS];
+ANALOG_OUTPUT Entry_Type_For_Connected_Device_[MAX_ITEMS]; 
+
+/*** GLOBAL VARIABLES ***/
+NetgearSwitchInterface thisNetgearSwitchInterface;
+
+/*** FUNCTIONS ***/
+FUNCTION RegisterEvents()
+{
+	RegisterEvent(thisNetgearSwitchInterface, Registered, OnRegistered);
+
+	RegisterEvent(thisNetgearSwitchInterface, VLANs, OnVLANsChanged);
+	RegisterEvent(thisNetgearSwitchInterface, MACs, OnMACsChanged);
+	RegisterEvent(thisNetgearSwitchInterface, Types, OnTypesChanged);
+
+    RegisterEvent(thisNetgearSwitchInterface, AdministratorModeChanged, OnAdministratorModeChanged);
+    RegisterEvent(thisNetgearSwitchInterface, AuthorizationChanged, OnAuthorizationChanged);
+    RegisterEvent(thisNetgearSwitchInterface, DescriptionChanged, OnDescriptionChanged);
+    RegisterEvent(thisNetgearSwitchInterface, DroppedPacketsChanged, OnDroppedPacketsChanged);
+	RegisterEvent(thisNetgearSwitchInterface, DefaultVLANPriorityChanged, OnDefaultVLANPriority);
+    RegisterEvent(thisNetgearSwitchInterface, FlowControlChanged, OnFlowControlChanged);
+    RegisterEvent(thisNetgearSwitchInterface, FrameSizeChanged, OnFrameSizeChanged);
+    RegisterEvent(thisNetgearSwitchInterface, LACPChanged, OnLACPChanged);
+	RegisterEvent(thisNetgearSwitchInterface, LinkTrapChanged, OnLinkTrapChanged);
+    RegisterEvent(thisNetgearSwitchInterface, MACChanged, OnMACChanged);
+    RegisterEvent(thisNetgearSwitchInterface, MirroredChanged, OnMirroredChanged);
+	RegisterEvent(thisNetgearSwitchInterface, MaxFrameSizeChanged, OnMaxFrameSizeChanged);
+	RegisterEvent(thisNetgearSwitchInterface, NativeVLANChanged, OnNativeVLANChanged);
+    //RegisterEvent(thisNetgearSwitchInterface, NameChanged, OnNameChanged);
+    RegisterEvent(thisNetgearSwitchInterface, OperationalStatusChanged, OnOperationalStatusChanged);
+    RegisterEvent(thisNetgearSwitchInterface, POEClassChanged, OnPOEClassChanged);
+    RegisterEvent(thisNetgearSwitchInterface, PortChanged, OnPortNumberChanged);
+    RegisterEvent(thisNetgearSwitchInterface, PortModeChanged, OnPortModeChanged);
+    RegisterEvent(thisNetgearSwitchInterface, PowerOverEthernetStatusChanged, OnPowerOverEthernetStatusChanged);
+	RegisterEvent(thisNetgearSwitchInterface, POEEnabledChanged, OnPOEEnabledChanged);
+	RegisterEvent(thisNetgearSwitchInterface, POECapableChanged, OnPOECapableChanged);
+    RegisterEvent(thisNetgearSwitchInterface, LinkSpeedChanged, OnLinkSpeedChanged);
+    RegisterEvent(thisNetgearSwitchInterface, StatusChanged, OnStatusChanged);
+	RegisterEvent(thisNetgearSwitchInterface, InterfaceSpeedChanged, OnInterfaceSpeedChanged);
+    RegisterEvent(thisNetgearSwitchInterface, STPChanged, OnSTPChanged);
+    RegisterEvent(thisNetgearSwitchInterface, STPStatusChanged, OnSTPStatusChanged);
+    RegisterEvent(thisNetgearSwitchInterface, VLANMembershipDetailsChanged, OnVLANMembershipDetailsChanged);
+
+    RegisterEvent(thisNetgearSwitchInterface, ErrorPacketsReceivedChanged, OnErrorPacketsRecievedChanged);
+    RegisterEvent(thisNetgearSwitchInterface, ErrorsReceivedChanged, OnErrorsReceivedChanged);
+    RegisterEvent(thisNetgearSwitchInterface, TransmitSpeedChanged, OnTransmitSpeedChanged);
+    RegisterEvent(thisNetgearSwitchInterface, TransmittedDataBytesChanged, OnTransmittedDataBytesChanged);
+    RegisterEvent(thisNetgearSwitchInterface, ReceivedDataBytesChanged, OnReceivedDataBytesChanged);
+    RegisterEvent(thisNetgearSwitchInterface, ReceiveSpeedChanged, OnReceiveSpeedChanged);
+
+	RegisterEvent(thisNetgearSwitchInterface, NeighborChanged, OnNeighborChanged);
+}
+
+FUNCTION MAIN()
+{   
+	RegisterEvents();	
+	thisNetgearSwitchInterface.Initialize(GetSymbolInstanceName(), Interface, Parent_Device_ID, Poll_Interval);
+}
+
+/*** EVENT HANDLERS ***/
+EVENTHANDLER OnRegistered(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Registered = args.Payload;
+}
+
+EVENTHANDLER OnNeighborChanged(NetgearSwitchInterface sender, DeviceInterfaceNeighborPayloadEventArgs args)
+{
+	Neighbor_Name = args.Payload.Name;
+	Neighbor_Description = args.Payload.Description;
+	Neighbor_Capabilities = args.Payload.Capabilities;
+	Neighbor_Chassis_ID = args.Payload.ChassisID;
+	Neighbor_Port_ID = args.Payload.PortID;
+	Neighbor_Port_Description = args.Payload.PortDescription;
+	Neighbor_Chassis_ID_Subtype = args.Payload.ChassisSubtype;
+	Neighbor_Port_ID_Subtype = args.Payload.PortSubtype;
+	Neighbor_Port_Authorization_Status = args.Payload.Authorization;
+}
+
+EVENTHANDLER OnAdministratorModeChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Administrator_Mode = args.Payload;
+}
+
+EVENTHANDLER OnAuthorizationChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Authorization_Status = args.Payload;
+}
+
+EVENTHANDLER OnDescriptionChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Description = args.Payload;
+}
+
+EVENTHANDLER OnDroppedPacketsChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Dropped_Packets_Count = args.Payload;
+}
+
+EVENTHANDLER OnDefaultVLANPriority(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Default_VLAN_Priority = args.Payload;
+}
+
+
+EVENTHANDLER OnFlowControlChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Flow_Control = args.Payload;
+}
+
+EVENTHANDLER OnFrameSizeChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Frame_Size = args.Payload;
+}
+
+EVENTHANDLER OnLACPChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	LACP = args.Payload;
+}
+
+EVENTHANDLER OnLinkTrapChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Link_Trap = args.Payload;
+}
+
+EVENTHANDLER OnMACChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	MAC_Address = args.Payload;
+}
+
+EVENTHANDLER OnMirroredChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Mirrored = args.Payload;
+}
+
+EVENTHANDLER OnMaxFrameSizeChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Max_Frame_Size = args.Payload;
+}
+
+EVENTHANDLER OnNativeVLANChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Native_Port_VLAN = args.Payload;
+}
+
+EVENTHANDLER OnOperationalStatusChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Operational_Status = args.Payload;
+}
+
+EVENTHANDLER OnPOEClassChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	POE_Class = args.Payload;
+}
+
+EVENTHANDLER OnPortNumberChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Actual_Port = args.Payload;
+}
+
+EVENTHANDLER OnPortModeChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Port_Mode = args.Payload;
+}
+
+EVENTHANDLER OnPowerOverEthernetStatusChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	POE_Status = args.Payload;
+}
+
+EVENTHANDLER OnPOEEnabledChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	POE_Enabled = args.Payload;
+}
+
+EVENTHANDLER OnPOECapableChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	POE_Capable = args.Payload;
+}
+
+
+EVENTHANDLER OnLinkSpeedChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Link_Speed = args.Payload;
+}
+
+EVENTHANDLER OnInterfaceSpeedChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	Interface_Speed = args.Payload;
+}
+
+
+EVENTHANDLER OnStatusChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	if (args.Payload = ON) { Link_Up = OFF; }
+    else { Link_Up = ON; }
+
+	Port_Status = args.Payload;
+}
+
+EVENTHANDLER OnSTPChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	STP = args.Payload;
+}
+
+EVENTHANDLER OnSTPStatusChanged(NetgearSwitchInterface sender, DigitalAnalogPayloadEventArgs args)
+{
+	STP_Status = args.Payload;
+}
+
+EVENTHANDLER OnVLANMembershipDetailsChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	VLAN_Membership = args.Payload;
+}
+
+EVENTHANDLER OnErrorPacketsRecievedChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Error_Packets_Received = args.Payload;
+}
+
+EVENTHANDLER OnErrorsReceivedChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Errors_Received = args.Payload;
+}
+       
+EVENTHANDLER OnTransmitSpeedChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Transmit_Speed = args.Payload;
+}
+
+EVENTHANDLER OnReceiveSpeedChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Receive_Speed = args.Payload;
+}
+
+EVENTHANDLER OnTransmittedDataBytesChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Transmitted_Data_Bytes = args.Payload;
+}
+
+EVENTHANDLER OnReceivedDataBytesChanged(NetgearSwitchInterface sender, StringPayloadEventArgs args)
+{
+	Received_Data_Bytes = args.Payload;
+}
+
+EVENTHANDLER OnVLANsChanged(NetgearSwitchInterface sender, DigitalAnalogArrayPayloadEventArgs args)
+{
+	integer i;
+	//loop through all items to make sure that any old entries are cleared out
+	for (i = 1 to MAX_ITEMS)
+	{
+		//we may receive a payload with a length of zero, which should only occur when the port link is down. in this case we want to clear out the value
+		//when the index is within the payload length, it should contain a valid value to assign
+		if (i <= args.PayloadLength) { VLAN_For_Connected_Device_[i] = args.Payload[i - 1]; }
+		//if not clear out the value
+		else { VLAN_For_Connected_Device_[i] = 0; }
+	}	
+}
+
+EVENTHANDLER OnMACsChanged(NetgearSwitchInterface sender, StringArrayPayloadEventArgs args)
+{
+ 	integer i;
+	//loop through all items to make sure that any old entries are cleared out
+	for (i = 1 to MAX_ITEMS)
+	{
+		//we may receive a payload with a length of zero, which should only occur when the port link is down. in this case we want to clear out the value
+		//when the index is within the payload length, it should contain a valid value to assign
+		if (i <= args.PayloadLength) { MAC_Address_For_Connected_Device_[i] = args.Payload[i - 1]; }
+		//if not clear out the value
+		else { MAC_Address_For_Connected_Device_[i] = ""; }
+	}
+}
+
+EVENTHANDLER OnTypesChanged(NetgearSwitchInterface sender, DigitalAnalogArrayPayloadEventArgs args)
+{
+ 	integer i;
+	//loop through all items to make sure that any old entries are cleared out
+	for (i = 1 to MAX_ITEMS)
+	{
+		//we may receive a payload with a length of zero, which should only occur when the port link is down. in this case we want to clear out the value
+		//when the index is within the payload length, it should contain a valid value to assign
+		if (i <= args.PayloadLength) { Entry_Type_For_Connected_Device_[i] = args.Payload[i - 1]; }
+		//if not clear out the value
+		else { Entry_Type_For_Connected_Device_[i] = 0; }
+	}
+}
+
+CHANGE Enable_Debug
+{
+	thisNetgearSwitchInterface.EnableDebug(Enable_Debug);
+}
+
+CHANGE Enable_Poll
+{
+	thisNetgearSwitchInterface.EnablePoll(Enable_Poll);
+}
+
+
+PUSH Enable_POE
+{
+	thisNetgearSwitchInterface.EnablePOE(ON);
+}
+
+PUSH Disable_POE
+{
+	thisNetgearSwitchInterface.EnablePOE(OFF);
+}
+
+PUSH Reset_POE
+{
+	thisNetgearSwitchInterface.ResetPOE();
+}

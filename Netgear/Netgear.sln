@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netgear", "Netgear.csproj", "{9CE5B230-6468-480E-A9C6-4398BCD9494C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProgram", "..\TestProgram\TestProgram.csproj", "{AACD300E-C311-4438-A497-15C954F257A9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9CE5B230-6468-480E-A9C6-4398BCD9494C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CE5B230-6468-480E-A9C6-4398BCD9494C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CE5B230-6468-480E-A9C6-4398BCD9494C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CE5B230-6468-480E-A9C6-4398BCD9494C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AACD300E-C311-4438-A497-15C954F257A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AACD300E-C311-4438-A497-15C954F257A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AACD300E-C311-4438-A497-15C954F257A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AACD300E-C311-4438-A497-15C954F257A9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
